@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Report;
 use App\Models\Attendance;
+use App\Models\Evaluation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -22,7 +24,12 @@ class AttendanceController extends Controller
             $attendances = Attendance::latest()->get();
         }
 
-        return view('attendances.index', compact('attendances'));
+        $student = $user->student;
+        $attendanceCount = Attendance::where('student_id', $student->id)->count();
+        $reportsCount = Report::where('student_id', $student->id)->count();
+        $evaluation = Evaluation::where('student_id', $student->id)->latest()->first();
+
+        return view('students.index', compact('attendances', 'attendanceCount', 'reportsCount', 'evaluation'));
     }
 
     /**
@@ -64,7 +71,7 @@ class AttendanceController extends Controller
     public function show(string $attendance)
     {
         //
-        return view('attendances.show', compact('attendance'));
+        // return view('attendances.show', compact('attendance'));
     }
 
     /**
@@ -99,29 +106,71 @@ class AttendanceController extends Controller
         }
     }
 
-    /**
-     * Proses check-out siswa.
-     */
-    public function checkout(Request $request, Attendance $attendance)
+    public function checkIn(Request $request)
     {
-        // Pastikan hanya siswa yang bisa check-out dirinya sendiri
-        if (Auth::user()->role !== 'siswa' || Auth::user()->student->id !== $attendance->student_id) {
-            return redirect()->route('attendances.index')->withErrors(['access' => 'Anda tidak memiliki izin untuk check-out.']);
-        }
-
-        // Pastikan siswa belum check-out
-        if ($attendance->check_out) {
-            return redirect()->route('attendances.index')->withErrors(['checkout' => 'Anda sudah melakukan check-out hari ini.']);
-        }
-
-        // Update waktu check-out
-        $attendance->update([
-            'check_out' => now()->format('H:i'),
-            'location_check_out' => $request->location_check_out,
+        $request->validate([
+            'latitude' => 'required|numeric',
+            'longitude' => 'required|numeric',
         ]);
 
-        return redirect()->route('attendances.index')->with('success', 'Check-out berhasil dilakukan.');
+        $student = Auth::user()->student;
+
+        // Cek apakah sudah check-in hari ini
+        $existingAttendance = Attendance::where('student_id', $student->id)
+            ->where('date', now()->toDateString())
+            ->first();
+
+        if ($existingAttendance) {
+            return response()->json(['message' => 'Anda sudah melakukan check-in hari ini.'], 400);
+        }
+
+        Attendance::create([
+            'student_id' => $student->id,
+            'date' => now()->toDateString(),
+            'check_in' => now()->format('H:i'),
+            'location_check_in' => $request->latitude . ', ' . $request->longitude,
+            'check_out' => null,
+            'location_check_out' => null,
+            'status' => 'hadir',
+        ]);
+
+        return response()->json(['message' => 'Check-in berhasil dilakukan!']);
     }
+
+    /**
+     * Proses check-out siswa dengan lokasi.
+     */
+    public function checkOut(Request $request)
+    {
+        $request->validate([
+            'latitude' => 'required|numeric',
+            'longitude' => 'required|numeric',
+        ]);
+
+        $student = Auth::user()->student;
+
+        // Cari absensi hari ini berdasarkan student_id
+        $attendance = Attendance::where('student_id', $student->id)
+            ->where('date', now()->toDateString())
+            ->first();
+
+        if (!$attendance) {
+            return response()->json(['message' => 'Anda belum melakukan check-in hari ini.'], 400);
+        }
+
+        if ($attendance->check_out) {
+            return response()->json(['message' => 'Anda sudah melakukan check-out hari ini.'], 400);
+        }
+
+        $attendance->update([
+            'check_out' => now()->format('H:i'),
+            'location_check_out' => $request->latitude . ', ' . $request->longitude,
+        ]);
+
+        return response()->json(['message' => 'Check-out berhasil dilakukan!']);
+    }
+
+
 
 
     /**

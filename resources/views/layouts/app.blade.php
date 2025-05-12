@@ -31,12 +31,64 @@
     </script> --}}
     <script src="{{ asset('bootstrap/js/bootstrap.bundle.min.js') }}"></script>
     <script>
-        document.addEventListener("DOMContentLoaded", function() {
+        document.getElementById("checkInBtn").addEventListener("click", function() {
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(function(position) {
                     let latitude = position.coords.latitude;
                     let longitude = position.coords.longitude;
-                    document.getElementById("location").value = latitude + ", " + longitude;
+
+                    fetch("{{ route('attendances.checkin') }}", {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/json",
+                                "X-CSRF-TOKEN": "{{ csrf_token() }}"
+                            },
+                            body: JSON.stringify({
+                                latitude: latitude,
+                                longitude: longitude
+                            })
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            alert(data.message);
+                            location.reload();
+                        })
+                        .catch(error => {
+                            alert("Gagal melakukan check-in: " + error);
+                        });
+                }, function(error) {
+                    alert("Gagal mendapatkan lokasi: " + error.message);
+                });
+            } else {
+                alert("Geolocation tidak didukung di browser ini.");
+            }
+        });
+
+        document.getElementById("checkOutBtn").addEventListener("click", function() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(function(position) {
+                    let latitude = position.coords.latitude;
+                    let longitude = position.coords.longitude;
+
+                    fetch("{{ route('attendances.checkout') }}", {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/json",
+                                "X-CSRF-TOKEN": "{{ csrf_token() }}"
+                            },
+                            body: JSON.stringify({
+                                latitude: latitude,
+                                longitude: longitude
+                            })
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            alert(data.message);
+                            location.reload();
+                        })
+                        .catch(error => {
+                            alert("Gagal melakukan check-out: " + error);
+                        });
                 }, function(error) {
                     alert("Gagal mendapatkan lokasi: " + error.message);
                 });
@@ -46,20 +98,19 @@
         });
     </script>
     <script>
-        document.addEventListener("DOMContentLoaded", function() {
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(function(position) {
-                    let latitude = position.coords.latitude;
-                    let longitude = position.coords.longitude;
-                    document.getElementById("location_check_out").value = latitude + ", " + longitude;
-                }, function(error) {
-                    alert("Gagal mendapatkan lokasi: " + error.message);
-                });
-            } else {
-                alert("Geolocation tidak didukung di browser ini.");
-            }
-        });
+        function updateTime() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('id-ID', {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+            document.getElementById('currentTime').textContent = timeString;
+        }
+        setInterval(updateTime, 1000);
+        updateTime();
     </script>
+
 
 </body>
 

@@ -5,6 +5,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\AttendanceController;
+use App\Http\Controllers\DashboardStudentController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -19,10 +20,6 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 });
 
-Route::middleware(['auth', 'role:siswa'])->group(function () {
-    Route::resource('attendances', AttendanceController::class);
-    Route::post('/attendances/{attendance}/checkout', [AttendanceController::class, 'checkout'])->name('attendances.checkout');
-});
 
 Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::get('/admin/dashboard', function () {
@@ -31,8 +28,13 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
 });
 
 Route::middleware(['auth', 'role:siswa'])->group(function () {
+    Route::resource('attendances', AttendanceController::class);
+    Route::post('/attendances/checkin', [AttendanceController::class, 'checkIn'])->name('attendances.checkin');
+    Route::post('/attendances/checkout', [AttendanceController::class, 'checkOut'])->name('attendances.checkout');
+
+
     Route::get('/student/dashboard', function () {
-        return view('students.index');
+        return view('dashboard.index');
     })->name('student.dashboard');
 });
 
@@ -58,4 +60,4 @@ Route::middleware(['auth', 'role:pembimbing_perusahaan'])->group(function () {
 //     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 // });
 
-require __DIR__ . '/auth.php';
+// require __DIR__ . '/auth.php';

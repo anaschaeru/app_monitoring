@@ -23,7 +23,7 @@ class UserSeeder extends Seeder
                 'role' => 'admin',
             ],
             [
-                'name' => 'Siswa 1',
+                'name' => 'Adzwar Muhamad Fadhilah',
                 'email' => 'siswa1@example.com',
                 'password' => Hash::make('password'),
                 'role' => 'siswa',

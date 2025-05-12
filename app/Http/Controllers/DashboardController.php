@@ -28,7 +28,7 @@ class DashboardController extends Controller
             $attendanceCount = Attendance::where('student_id', $student->id)->count();
             $reportsCount = Report::where('student_id', $student->id)->count();
             $evaluation = Evaluation::where('student_id', $student->id)->latest()->first();
-            return view('students.index', compact('attendanceCount', 'reportsCount', 'evaluation'));
+            return view('dashboard.index', compact('attendanceCount', 'reportsCount', 'evaluation'));
         }
 
         return redirect()->route('home');
